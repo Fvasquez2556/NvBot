@@ -1,0 +1,9 @@
+Partes del Bot
+
+1. sección que realizará un análisis histórico del precio de las monedas en Binance. En base a los datos obtenidos realizar un precio promedio de las monedas para: 1 día, 1 semana y 1 mes, promediar esos precios para tener de referencia, guardarlo, esta sección también realizará el análisis para la detección de los picos de subida de precios que haya tenido la moneda en el transcurso concluido de: 1h, 4h, 12h y 1 día. También registrará los datos técnicos como los indicares y más que haya tenido para cada período. esto para detectar patrones en las subidas de los precios que puedan ayudar a una mejor detección de los momentums de subida que pueda tener una cripto moneda
+
+2. Sección que realizara el análisis de los indicadores técnicos y auxiliares que ayuden a una temprana y mejor detección del momentum de subida que pueda tener las criptomonedas analizadas, estos análisis serán para realizar una detección de confianza de subida de las monedas, para aquellas que tengan más probabilidad de superar los siguientes %: 3, 5, 7.5 y 10.
+el momentum se medira así, débil, medio, alto y fuerte con alta confianza. si tres de estos rangos cumplen con el mismo, entonces la señal que enviará el bot será ese, si están iguales será medio. esto será para unificar la fuerza que tendrá la tendencia del momentum para dar una señal solida de buena confianza
+
+
+las 2 secciones se unificarán para dar la señal. esta señal siento yo que será solida y de alta confianza para detectar un momentum de subida fuerte. el bot será intradía, que de al menos 3 señales fuertes y de alta confianza. la señal se irá actualizando con cada análisis del mercado. 

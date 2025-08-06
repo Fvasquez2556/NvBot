@@ -1,0 +1,114 @@
+# Instrucciones para GitHub Copilot Pro: Bot Crypto Momentum v2.0
+
+## ¿Qué es esta nueva versión?
+
+**Bot de Señales de Momentum Alcista** que analiza todos los pares USDT de Binance para detectar oportunidades de subida +7.5%. Genera mínimo 3 señales diarias clasificadas como: Débil, Medio, Alto, Fuerte.
+
+**Diferencias clave vs v1:**
+- Solo momentum ALCISTA (eliminar análisis bajista)
+- Sistema de confluencia multi-timeframe: 5m, 15m, 1h, 4h
+- Análisis histórico de patrones integrado
+- Lógica de unificación de señales simplificada
+
+## Estructura Nueva Requerida
+
+```
+crypto_momentum_bot_v2/
+├── core/
+│   ├── historical_analyzer.py    # Análisis histórico y patrones
+│   ├── technical_analyzer.py     # Indicadores técnicos momentum
+│   ├── signal_unifier.py         # Unifica las 3 secciones
+│   └── momentum_detector.py      # Motor principal
+├── data/
+│   ├── binance_collector.py      # WebSocket masivo Binance
+│   ├── timeframe_manager.py      # Gestión 5m,15m,1h,4h
+│   └── price_cache.py            # Cache precios históricos
+├── indicators/
+│   ├── rsi_crypto.py             # RSI 25/75 optimizado
+│   ├── macd_sensitive.py         # MACD 3-10-16
+│   ├── volume_spike.py           # Volume 300%+ detector
+│   └── confluence_validator.py   # Validación multi-timeframe
+├── signals/
+│   ├── signal_generator.py       # Generador señales finales
+│   ├── confidence_classifier.py  # Débil→Fuerte classifier
+│   └── alert_sender.py           # Telegram/Discord alerts
+├── config/
+│   ├── parameters.py             # Parámetros optimizados
+│   └── exchanges.py              # Config Binance
+├── dashboard/
+│   └── live_signals.py           # Dashboard simplificado
+└── main.py                       # Orchestrator principal
+```
+
+## Archivos a ELIMINAR del proyecto actual
+
+- `utils/signal_averaging.py` (complejo, no necesario)
+- `backtesting/` (carpeta completa, enfoque tiempo real)
+- `strategies/momentum_strategy.py` (reemplazar por signal_unifier.py)
+- `risk_management/` (carpeta completa, solo análisis)
+- `execution/` (carpeta completa, no trading automático)
+- `monitoring/` (simplificar en dashboard)
+
+## Archivos a MODIFICAR/REUTILIZAR
+
+**Mantener y adaptar:**
+- `data/data_fetcher.py` → `data/binance_collector.py`
+- `indicators/rsi_optimizer.py` → usar como base para `indicators/rsi_crypto.py`
+- `indicators/macd_sensitive.py` → mantener con ajustes menores
+- `dashboard/web_dashboard.py` → simplificar en `dashboard/live_signals.py`
+- `config/trading_config.py` → `config/parameters.py`
+
+## Especificaciones Técnicas Clave
+
+### 1. Análisis Histórico (core/historical_analyzer.py)
+```python
+# Funcionalidades requeridas:
+- Calcular promedios: 1d, 1w, 1m por crypto
+- Detectar picos históricos en: 1h, 4h, 12h, 1d
+- Identificar patrones de subida pasados
+- Score histórico: 0-25 puntos
+```
+
+### 2. Análisis Técnico (core/technical_analyzer.py)
+```python
+# Indicadores optimizados:
+- RSI: umbrales 25/75
+- MACD: configuración 3-10-16
+- Volume Spike: 300%+ threshold
+- Score técnico: 0-50 puntos
+```
+
+### 3. Confluencia Multi-Timeframe (indicators/confluence_validator.py)
+```python
+timeframes = ['5m', '15m', '1h', '4h']
+# Lógica: 3+ timeframes alcistas = señal fuerte
+# Score confluencia: 0-25 puntos
+```
+
+### 4. Sistema de Scoring Unificado
+```python
+total_score = historical_score + technical_score + confluence_score  # 0-100
+confidence_levels = {
+    85-100: 'FUERTE',
+    70-84: 'ALTO', 
+    50-69: 'MEDIO',
+    30-49: 'DÉBIL'
+}
+```
+
+## Parámetros de Configuración
+
+```python
+# config/parameters.py
+RSI_OVERSOLD = 25
+RSI_OVERBOUGHT = 75
+MACD_FAST = 3
+MACD_SLOW = 10
+MACD_SIGNAL = 16
+VOLUME_SPIKE_THRESHOLD = 3.0
+MIN_VOLUME_24H = 1_000_000
+UPDATE_INTERVAL = 30
+TARGET_DAILY_SIGNALS = 3
+```
+
+**Objetivo:** Crear sistema limpio, enfocado en momentum alcista, con arquitectura modular que genere señales de alta confianza para movimientos +7.5%.

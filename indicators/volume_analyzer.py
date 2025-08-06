@@ -8,7 +8,7 @@ import pandas as pd
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime, timedelta
 
-from config.trading_config import config
+from config.parameters import VOLUME_SPIKE_THRESHOLD
 from utils.logger import log
 
 
@@ -16,10 +16,10 @@ class VolumeAnalyzer:
     """Analizador avanzado de volumen para detección de momentum"""
     
     def __init__(self):
-        self.volume_period = config.technical.volume_average_period
-        self.spike_threshold = config.technical.volume_spike_threshold
-        self.strong_threshold = config.technical.volume_spike_strong
-        self.explosive_threshold = config.technical.volume_spike_explosive
+        self.volume_period = 20  # Período para promedio de volumen
+        self.spike_threshold = VOLUME_SPIKE_THRESHOLD
+        self.strong_threshold = 5.0  # 500% spike fuerte
+        self.explosive_threshold = 10.0  # 1000% spike explosivo
         
         # Cache para historial de volúmenes
         self.volume_history: Dict[str, List[Dict]] = {}
@@ -336,7 +336,7 @@ class VolumeAnalyzer:
             elif accumulation_pattern == 'DISTRIBUTION':
                 score -= 2  # Penalizar distribución
             
-            return max(0, min(score, config.scoring.volume_max_points))  # 0-25
+            return max(0, min(score, 25))  # 0-25 puntos máximo
             
         except Exception as e:
             log.error(f"Error calculando score de volumen: {e}")

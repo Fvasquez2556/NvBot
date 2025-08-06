@@ -5,6 +5,10 @@ Configuración de conexiones con exchanges y APIs.
 import os
 from dataclasses import dataclass
 from typing import Optional
+from dotenv import load_dotenv
+
+# Cargar variables de entorno
+load_dotenv()
 
 @dataclass
 class BinanceConfig:

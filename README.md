@@ -38,17 +38,24 @@ BINANCE_SECRET_KEY=tu_secret_key_aqui
 
 ## 🚀 Uso
 
-### Modo Demo (Sin API Keys)
+### Ejecutar Bot v2.0 (Solo Bot)
 ```bash
-python demo.py
+python main.py
 ```
 
-### Modo Real (Con API Keys)
+### Ejecutar Bot v2.0 + Dashboard Integrado (Recomendado)
 ```bash
-python run_bot.py
+python run_bot_v2.py
 ```
 
-## 📊 Dashboard Web
+## 📊 Dashboard Web v2.0
+
+El nuevo dashboard incluye:
+- **Sistema de Scoring v2.0**: Histórico (0-25) + Técnico (0-50) + Confluencia (0-25)
+- **Niveles de Confianza**: DÉBIL/MEDIO/ALTO/FUERTE
+- **Filtros Avanzados**: Por confianza y score total
+- **Métricas en Tiempo Real**: Oportunidades, señales diarias, performance
+- **Tabla Interactiva**: Top oportunidades con análisis detallado
 
 Accede a `http://localhost:8050` para ver:
 - Tabla de oportunidades en tiempo real

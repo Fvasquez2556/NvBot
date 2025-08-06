@@ -1,45 +1,52 @@
 """
-Bot principal de detección de momentum crypto.
-Punto de entrada que coordina todos los componentes del sistema.
+Launcher integrado para Bot v2.0 + Dashboard v2.0
+Ejecuta ambos componentes simultáneamente
 """
 
 import asyncio
-import signal
+import threading
+import time
 import sys
+import signal
 from typing import Dict, List
 from datetime import datetime
 
-from data.data_fetcher import MassiveDataCollector
-from strategies.momentum_strategy import MomentumAnalyzer
-from config.trading_config import config
+from data.binance_collector import BinanceCollector
+from core.momentum_detector import MomentumDetector
+from config.parameters import TARGET_DAILY_SIGNALS, UPDATE_INTERVAL
+from dashboard.web_dashboard_v2 import CryptoMomentumDashboardV2
+from data.mongodb_manager import mongodb_manager
 from utils.logger import log
 
 
 class CryptoMomentumBot:
-    """Bot principal que coordina la detección de momentum en tiempo real"""
+    """Bot principal v2.0 que coordina la detección de momentum alcista en tiempo real"""
     
     def __init__(self):
-        # Componentes principales
-        self.data_collector = MassiveDataCollector()
-        self.momentum_analyzer = MomentumAnalyzer()
+        # Componentes principales v2.0
+        self.data_collector = BinanceCollector()
+        self.momentum_detector = MomentumDetector()
         
         # Estado del bot
         self.running = False
         self.analysis_cycle_count = 0
         self.last_analysis_time = None
         
-        # Resultados
+        # Resultados v2.0
         self.current_opportunities: Dict[str, Dict] = {}
-        self.top_opportunities: List[Dict] = []
+        self.daily_signals: List[Dict] = []
         
     async def initialize(self):
-        """Inicializa todos los componentes del bot"""
+        """Inicializa todos los componentes del bot v2.0"""
         try:
-            log.info("🚀 Inicializando Crypto Momentum Bot...")
+            log.info("🚀 Inicializando Crypto Momentum Bot v2.0...")
             
-            # Validar configuración
-            config.validate()
-            log.info("✅ Configuración validada")
+            # Conectar a MongoDB
+            log.info("💾 Conectando a MongoDB...")
+            await mongodb_manager.connect()
+            
+            # Validar que tenemos los parámetros necesarios
+            log.info("✅ Parámetros v2.0 cargados")
             
             # Inicializar recolector de datos
             await self.data_collector.initialize()
@@ -115,14 +122,13 @@ class CryptoMomentumBot:
         signal.signal(signal.SIGTERM, signal_handler)
     
     async def _on_new_data(self, data_type: str, symbol: str, data: Dict):
-        """Callback llamado cuando llegan nuevos datos"""
+        """Callback llamado cuando llegan nuevos datos v2.0"""
         try:
             # Solo procesar actualizaciones de ticker para triggers inmediatos
             if data_type == 'ticker':
                 # Verificar si hay cambios significativos que requieran análisis inmediato
                 if self._should_trigger_immediate_analysis(symbol, data):
                     log.debug(f"Trigger inmediato para {symbol}")
-                    # Aquí podrías implementar análisis inmediato para símbolos específicos
                     
         except Exception as e:
             log.error(f"Error procesando datos de {symbol}: {e}")
@@ -136,9 +142,6 @@ class CryptoMomentumBot:
             if price_change > 5:
                 return True
             
-            # 2. Volumen spike muy alto
-            # (Se implementaría comparando con datos históricos)
-            
             return False
             
         except Exception as e:
@@ -147,7 +150,7 @@ class CryptoMomentumBot:
     
     async def _main_analysis_loop(self):
         """Ciclo principal de análisis de momentum"""
-        log.info(f"🔍 Iniciando ciclo de análisis (cada {config.update_interval} segundos)")
+        log.info(f"🔍 Iniciando ciclo de análisis (cada {UPDATE_INTERVAL} segundos)")
         
         while self.running:
             try:
@@ -159,10 +162,10 @@ class CryptoMomentumBot:
                 
                 if not all_symbols_data:
                     log.warning("No hay datos disponibles para análisis")
-                    await asyncio.sleep(config.update_interval)
+                    await asyncio.sleep(UPDATE_INTERVAL)
                     continue
                 
-                # Analizar símbolos en paralelo (en lotes para no sobrecargar)
+                # Analizar símbolos en paralelo
                 await self._analyze_symbols_batch(all_symbols_data)
                 
                 # Actualizar oportunidades top
@@ -179,234 +182,285 @@ class CryptoMomentumBot:
                 log.info(f"✅ Ciclo #{self.analysis_cycle_count} completado en {cycle_duration:.2f}s")
                 
                 # Esperar hasta el próximo ciclo
-                await asyncio.sleep(max(0, config.update_interval - cycle_duration))
+                await asyncio.sleep(max(0, UPDATE_INTERVAL - cycle_duration))
                 
             except Exception as e:
                 log.error(f"Error en ciclo de análisis: {e}")
-                await asyncio.sleep(5)  # Pausa corta antes de reintentar
+                await asyncio.sleep(5)
     
     async def _analyze_symbols_batch(self, symbols_data: Dict[str, Dict]):
-        """Analiza símbolos en lotes para optimizar performance"""
+        """Analiza símbolos usando el nuevo MomentumDetector v2.0"""
         try:
-            symbols = list(symbols_data.keys())
-            batch_size = 50  # Procesar 50 símbolos por lote
+            log.info(f"🔍 Detectando oportunidades de momentum en {len(symbols_data)} símbolos")
             
-            log.info(f"Analizando {len(symbols)} símbolos en lotes de {batch_size}")
+            # Usar el nuevo detector para procesar todos los símbolos
+            opportunities = await self.momentum_detector.detect_momentum_opportunities(symbols_data)
             
-            for i in range(0, len(symbols), batch_size):
-                batch_symbols = symbols[i:i + batch_size]
-                
-                # Crear tareas para análisis paralelo
-                analysis_tasks = []
-                for symbol in batch_symbols:
-                    symbol_data = symbols_data[symbol]
-                    if self._has_sufficient_data(symbol_data):
-                        task = self.momentum_analyzer.analyze_symbol_momentum(symbol, symbol_data)
-                        analysis_tasks.append(task)
-                
-                # Ejecutar análisis en paralelo
-                if analysis_tasks:
-                    results = await asyncio.gather(*analysis_tasks, return_exceptions=True)
-                    
-                    # Procesar resultados
-                    for result in results:
-                        if isinstance(result, Exception):
-                            log.error(f"Error en análisis: {result}")
-                        elif isinstance(result, dict) and 'symbol' in result:
-                            symbol = result['symbol']
-                            if 'error' not in result:
-                                self.current_opportunities[symbol] = result
-                
-                # Pausa pequeña entre lotes
-                await asyncio.sleep(0.1)
+            # Actualizar oportunidades actuales
+            self.current_opportunities.clear()
+            for opportunity in opportunities:
+                symbol = opportunity.get('symbol')
+                if symbol:
+                    self.current_opportunities[symbol] = opportunity
+            
+            # Agregar señales fuertes a la lista diaria
+            for opportunity in opportunities:
+                if opportunity.get('confidence_level') in ['FUERTE', 'ALTO']:
+                    # Verificar que no esté duplicada
+                    symbol = opportunity.get('symbol')
+                    if not any(s.get('symbol') == symbol for s in self.daily_signals):
+                        self.daily_signals.append(opportunity)
+                        
+                        # Guardar señal fuerte en MongoDB
+                        try:
+                            await mongodb_manager.save_signal(opportunity)
+                            log.info(f"💾 Señal {opportunity.get('confidence_level')} guardada en MongoDB: {symbol}")
+                        except Exception as e:
+                            log.error(f"❌ Error guardando señal en MongoDB: {e}")
+            
+            # Mantener solo las mejores señales del día
+            if len(self.daily_signals) > TARGET_DAILY_SIGNALS * 2:
+                self.daily_signals.sort(key=lambda x: x.get('total_score', 0), reverse=True)
+                self.daily_signals = self.daily_signals[:TARGET_DAILY_SIGNALS * 2]
+            
+            # Log resumen
+            if opportunities:
+                log.info(f"💡 {len(opportunities)} oportunidades detectadas, "
+                        f"{len(self.daily_signals)} señales fuertes acumuladas hoy")
                 
         except Exception as e:
-            log.error(f"Error en análisis por lotes: {e}")
-    
-    def _has_sufficient_data(self, symbol_data: Dict) -> bool:
-        """Verifica si un símbolo tiene datos suficientes para análisis"""
-        try:
-            # Verificar estructura básica
-            if 'ticker' not in symbol_data or 'klines' not in symbol_data:
-                return False
-            
-            # Verificar timeframes necesarios
-            required_timeframes = ['1m', '5m', '15m']
-            for tf in required_timeframes:
-                if tf not in symbol_data['klines']:
-                    return False
-                if len(symbol_data['klines'][tf]) < 30:  # Mínimo 30 velas
-                    return False
-            
-            return True
-            
-        except Exception:
-            return False
+            log.error(f"Error en análisis por lotes v2.0: {e}")
     
     def _update_top_opportunities(self):
-        """Actualiza la lista de mejores oportunidades"""
+        """Actualiza la lista de mejores oportunidades v2.0"""
         try:
-            # Clasificar oportunidades por score
-            opportunities = []
+            if not self.current_opportunities:
+                return
             
-            for symbol, analysis in self.current_opportunities.items():
-                if 'error' not in analysis:
-                    score = analysis.get('momentum_score', {}).get('total_score', 0)
-                    classification = analysis.get('classification', 'DÉBIL')
-                    prob_4h = analysis.get('probability_7_5', {}).get('timeframe_probabilities', {}).get('4h', 0)
-                    
-                    opportunities.append({
-                        'symbol': symbol,
-                        'score': score,
-                        'classification': classification,
-                        'probability_4h': prob_4h,
-                        'analysis': analysis
-                    })
+            # Filtrar oportunidades por score mínimo
+            filtered_opportunities = {
+                symbol: opp for symbol, opp in self.current_opportunities.items()
+                if opp.get('total_score', 0) >= 50
+            }
             
-            # Ordenar por score descendente
-            opportunities.sort(key=lambda x: x['score'], reverse=True)
-            
-            # Mantener top 50
-            self.top_opportunities = opportunities[:50]
-            
-            # Log de estadísticas
-            strong_count = len([o for o in opportunities if o['classification'] == 'FUERTE'])
-            high_count = len([o for o in opportunities if o['classification'] == 'ALTO'])
-            
-            log.info(f"🎯 Oportunidades detectadas: {strong_count} FUERTES, {high_count} ALTAS de {len(opportunities)} total")
-            
+            self.current_opportunities = filtered_opportunities
+                
         except Exception as e:
-            log.error(f"Error actualizando top oportunidades: {e}")
+            log.error(f"Error actualizando oportunidades: {e}")
     
     async def _check_and_send_alerts(self):
-        """Verifica y envía alertas para nuevas oportunidades"""
+        """Verifica y envía alertas para nuevas oportunidades v2.0"""
         try:
             # Filtrar oportunidades que requieren alerta
             alert_opportunities = [
-                opp for opp in self.top_opportunities[:10]  # Top 10
-                if opp['classification'] in ['FUERTE', 'ALTO'] and opp['score'] >= 70
+                opp for opp in self.current_opportunities.values()
+                if opp.get('confidence_level') in ['FUERTE', 'ALTO'] and opp.get('total_score', 0) >= 70
             ]
             
             if alert_opportunities:
                 log.info(f"🚨 {len(alert_opportunities)} oportunidades de alta calidad detectadas")
-                
-                # Aquí se implementaría el sistema de alertas (Telegram, Discord, etc.)
-                for opp in alert_opportunities[:3]:  # Solo top 3 para evitar spam
-                    await self._send_opportunity_alert(opp)
                     
         except Exception as e:
             log.error(f"Error enviando alertas: {e}")
-    
-    async def _send_opportunity_alert(self, opportunity: Dict):
-        """Envía alerta para una oportunidad específica"""
-        try:
-            symbol = opportunity['symbol']
-            score = opportunity['score']
-            classification = opportunity['classification']
-            prob_4h = opportunity['probability_4h']
-            
-            # Crear mensaje de alerta
-            alert_message = f"""
-🚀 OPORTUNIDAD DETECTADA
-
-💰 Símbolo: {symbol}
-🎯 Clasificación: {classification}
-📊 Score: {score}/100
-🔥 Probabilidad +7.5% (4h): {prob_4h:.1f}%
-
-⏰ {datetime.now().strftime('%H:%M:%S')}
-            """.strip()
-            
-            log.info(f"ALERTA: {alert_message}")
-            
-            # Aquí implementarías el envío real (Telegram, Discord, etc.)
-            
-        except Exception as e:
-            log.error(f"Error enviando alerta individual: {e}")
     
     async def _reporting_loop(self):
         """Ciclo de reportes periódicos"""
         while self.running:
             try:
                 await asyncio.sleep(300)  # Reporte cada 5 minutos
-                
                 if self.current_opportunities:
-                    await self._generate_periodic_report()
+                    log.info(f"📈 {len(self.current_opportunities)} oportunidades activas")
                     
             except Exception as e:
-                log.error(f"Error en ciclo de reportes: {e}")
-                await asyncio.sleep(60)
+                log.error(f"Error en reporte: {e}")
     
-    async def _generate_periodic_report(self):
-        """Genera reporte periódico del estado del bot"""
+    async def stop(self):
+        """Detiene el bot de forma ordenada"""
         try:
-            # Obtener resumen de mercado
-            market_summary = self.momentum_analyzer.get_market_momentum_summary()
+            log.info("🛑 Deteniendo Crypto Momentum Bot v2.0...")
+            self.running = False
             
-            if 'error' not in market_summary:
-                strong_count = market_summary.get('strong_opportunities', 0)
-                high_count = market_summary.get('high_opportunities', 0)
-                total_analyzed = market_summary.get('total_analyzed', 0)
-                avg_score = market_summary.get('average_score', 0)
-                
-                # Obtener datos de mercado general
-                market_overview = self.data_collector.get_market_overview()
-                coverage = market_overview.get('coverage_percentage', 0)
-                
-                log.info(f"""
-📈 REPORTE PERIÓDICO - {datetime.now().strftime('%H:%M:%S')}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 Oportunidades: {strong_count} FUERTES | {high_count} ALTAS
-📊 Total analizados: {total_analyzed} símbolos
-🔍 Cobertura: {coverage:.1f}%
-📈 Score promedio: {avg_score:.1f}/100
-🔄 Ciclos completados: {self.analysis_cycle_count}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-                """.strip())
-                
-                # Mostrar top 5 oportunidades
-                if self.top_opportunities:
-                    log.info("🏆 TOP 5 OPORTUNIDADES:")
-                    for i, opp in enumerate(self.top_opportunities[:5], 1):
-                        log.info(f"  {i}. {opp['symbol']}: {opp['score']}/100 ({opp['classification']}) - {opp['probability_4h']:.1f}%")
-                        
+            # Cerrar conexión a MongoDB
+            await mongodb_manager.close()
+            log.info("💾 Conexión MongoDB cerrada")
+            
+            log.info("✅ Bot detenido correctamente")
+            
         except Exception as e:
-            log.error(f"Error generando reporte: {e}")
-    
-    def get_current_opportunities(self) -> List[Dict]:
-        """Obtiene las oportunidades actuales"""
-        return self.top_opportunities.copy()
-    
+            log.error(f"❌ Error deteniendo bot: {e}")
+
     def get_bot_status(self) -> Dict:
-        """Obtiene estado actual del bot"""
-        return {
-            'running': self.running,
-            'cycles_completed': self.analysis_cycle_count,
-            'last_analysis': self.last_analysis_time,
-            'opportunities_count': len(self.current_opportunities),
-            'top_opportunities_count': len(self.top_opportunities),
-            'data_coverage': self.data_collector.get_market_overview().get('coverage_percentage', 0)
-        }
+        """Obtiene estado actual del bot v2.0"""
+        try:
+            strong_signals = len([opp for opp in self.current_opportunities.values() 
+                                if opp.get('confidence_level') == 'FUERTE'])
+            high_signals = len([opp for opp in self.current_opportunities.values() 
+                              if opp.get('confidence_level') == 'ALTO'])
+            
+            return {
+                'running': self.running,
+                'analysis_cycles': self.analysis_cycle_count,
+                'last_analysis': self.last_analysis_time,
+                'current_opportunities': len(self.current_opportunities),
+                'daily_signals': len(self.daily_signals),
+                'strong_signals': strong_signals,
+                'high_signals': high_signals,
+                'target_daily_signals': TARGET_DAILY_SIGNALS,
+                'version': '2.0'
+            }
+        except Exception as e:
+            log.error(f"Error obteniendo estado: {e}")
+            return {'error': str(e)}
+
+
+class BotDashboardLauncher:
+    """Ejecuta bot y dashboard v2.0 de forma integrada"""
+    
+    def __init__(self):
+        self.bot = None
+        self.dashboard = None
+        self.dashboard_thread = None
+        self.running = False
+        
+    async def start_integrated_system(self):
+        """Inicia bot y dashboard de forma integrada"""
+        try:
+            log.info("🚀 Iniciando Crypto Momentum Bot v2.0 + Dashboard...")
+            
+            # 1. Crear instancia del bot
+            self.bot = CryptoMomentumBot()
+            
+            # 2. Crear dashboard conectado al bot
+            self.dashboard = CryptoMomentumDashboardV2(bot_instance=self.bot)
+            
+            # 3. Iniciar dashboard PRIMERO en thread separado
+            log.info("🌐 Iniciando dashboard v2.0...")
+            self.dashboard_thread = threading.Thread(
+                target=self._run_dashboard_thread,
+                daemon=True
+            )
+            self.dashboard_thread.start()
+            log.info("✅ Thread del dashboard iniciado")
+            
+            # 4. Esperar a que dashboard se inicie
+            log.info("⏳ Esperando a que dashboard se inicie...")
+            await asyncio.sleep(3)
+            log.info("🌐 Dashboard debería estar disponible en: http://localhost:8050")
+            
+            # 5. Inicializar bot después
+            log.info("🤖 Inicializando bot v2.0...")
+            await self.bot.initialize()
+            
+            # 6. Iniciar recolección de datos del bot
+            log.info("📊 Iniciando recolección de datos...")
+            await self.bot.data_collector.start()
+            
+            # 7. Marcar como ejecutándose
+            self.running = True
+            self.bot.running = True
+            
+            # 8. Iniciar ciclos de análisis
+            log.info("🔍 Iniciando análisis de momentum...")
+            analysis_task = asyncio.create_task(self.bot._main_analysis_loop())
+            report_task = asyncio.create_task(self.bot._reporting_loop())
+            
+            # 9. Mostrar información del sistema
+            self._show_system_info()
+            
+            # 10. Esperar ejecución
+            log.info("✅ Sistema completamente iniciado!")
+            log.info("🌐 Dashboard disponible en: http://localhost:8050")
+            log.info("🛑 Presiona Ctrl+C para detener")
+            
+            await asyncio.gather(analysis_task, report_task)
+            
+        except KeyboardInterrupt:
+            log.info("🛑 Deteniendo sistema por solicitud del usuario...")
+        except Exception as e:
+            log.error(f"❌ Error en sistema integrado: {e}")
+        finally:
+            await self.stop_integrated_system()
+    
+    def _run_dashboard_thread(self):
+        """Ejecuta dashboard en thread separado"""
+        try:
+            log.info("🌐 Iniciando thread del dashboard...")
+            self.dashboard.run(host='0.0.0.0', port=8050, debug=False)
+        except Exception as e:
+            log.error(f"❌ Error en dashboard thread: {e}")
+            import traceback
+            log.error(f"Traceback: {traceback.format_exc()}")
+    
+    def _show_system_info(self):
+        """Muestra información del sistema iniciado"""
+        log.info("="*60)
+        log.info("🎯 CRYPTO MOMENTUM BOT v2.0 - SISTEMA INICIADO")
+        log.info("="*60)
+        log.info(f"⏰ Hora de inicio: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        log.info(f"🔄 Intervalo de análisis: {UPDATE_INTERVAL}s")
+        log.info(f"🎯 Target diario: 3 señales fuertes")
+        log.info(f"📊 Arquitectura: Histórico + Técnico + Confluencia = Señal Unificada")
+        log.info(f"🌐 Dashboard: http://localhost:8050")
+        log.info("="*60)
+    
+    async def stop_integrated_system(self):
+        """Detiene todo el sistema de forma graceful"""
+        try:
+            log.info("🔄 Deteniendo sistema integrado...")
+            
+            self.running = False
+            
+            # Detener bot
+            if self.bot:
+                await self.bot.stop()
+            
+            # Detener dashboard
+            if self.dashboard:
+                self.dashboard.stop()
+            
+            log.info("✅ Sistema detenido correctamente")
+            
+        except Exception as e:
+            log.error(f"Error deteniendo sistema: {e}")
 
 
 async def main():
-    """Función principal"""
+    """Función principal del launcher"""
     try:
-        # Crear e iniciar bot
-        bot = CryptoMomentumBot()
-        await bot.start()
+        # Configurar manejo de señales
+        def signal_handler(signum, frame):
+            log.info(f"Señal {signum} recibida, deteniendo...")
+            sys.exit(0)
+        
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+        
+        # Crear y ejecutar launcher
+        launcher = BotDashboardLauncher()
+        await launcher.start_integrated_system()
         
     except KeyboardInterrupt:
-        log.info("Bot detenido por el usuario")
+        log.info("Sistema detenido por el usuario")
     except Exception as e:
-        log.error(f"Error fatal: {e}")
+        log.error(f"Error fatal en launcher: {e}")
         sys.exit(1)
 
 
 if __name__ == "__main__":
+    print("""
+    ╔══════════════════════════════════════════════════════════════╗
+    ║                CRYPTO MOMENTUM BOT v2.0                     ║
+    ║                   + DASHBOARD INTEGRADO                      ║
+    ╠══════════════════════════════════════════════════════════════╣
+    ║ 🚀 Iniciando sistema completo...                            ║
+    ║ 📊 Dashboard: http://localhost:8050                         ║
+    ║ 🛑 Ctrl+C para detener                                      ║
+    ╚══════════════════════════════════════════════════════════════╝
+    """)
+    
     # Configurar event loop para Windows
     if sys.platform.startswith('win'):
         asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
     
-    # Ejecutar bot
+    # Ejecutar sistema integrado
     asyncio.run(main())

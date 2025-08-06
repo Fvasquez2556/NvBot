@@ -8,7 +8,7 @@ import pandas as pd
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime
 
-from config.trading_config import config
+from config.parameters import MACD_FAST, MACD_SLOW, MACD_SIGNAL
 from utils.logger import log
 
 
@@ -16,9 +16,9 @@ class MACDSensitive:
     """MACD optimizado para el mercado crypto con mayor sensibilidad"""
     
     def __init__(self, fast_period: int = None, slow_period: int = None, signal_period: int = None):
-        self.fast_period = fast_period or config.technical.macd_fast
-        self.slow_period = slow_period or config.technical.macd_slow
-        self.signal_period = signal_period or config.technical.macd_signal
+        self.fast_period = fast_period or MACD_FAST
+        self.slow_period = slow_period or MACD_SLOW
+        self.signal_period = signal_period or MACD_SIGNAL
         
         # Cache para datos históricos
         self.price_history: Dict[str, List[float]] = {}
@@ -362,7 +362,7 @@ class MACDSensitive:
             if acceleration == 'ACCELERATING' and direction == 'BULLISH':
                 score += 2
             
-            return max(0, min(score, config.scoring.macd_max_points))  # 0-20
+            return max(0, min(score, 20))  # 0-20 puntos máximo
             
         except Exception as e:
             log.error(f"Error calculando score MACD: {e}")

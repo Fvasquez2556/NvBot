@@ -8,7 +8,7 @@ import pandas as pd
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime
 
-from config.trading_config import config
+from config.parameters import RSI_PERIOD, RSI_OVERSOLD, RSI_OVERBOUGHT
 from utils.logger import log
 
 
@@ -16,9 +16,9 @@ class RSIOptimizer:
     """RSI optimizado específicamente para el mercado crypto"""
     
     def __init__(self, period: int = None):
-        self.period = period or config.technical.rsi_period
-        self.oversold_threshold = config.technical.rsi_oversold
-        self.overbought_threshold = config.technical.rsi_overbought
+        self.period = period or RSI_PERIOD
+        self.oversold_threshold = RSI_OVERSOLD
+        self.overbought_threshold = RSI_OVERBOUGHT
         
         # Cache para datos históricos por símbolo
         self.price_history: Dict[str, List[float]] = {}
@@ -284,7 +284,7 @@ class RSIOptimizer:
             if avg_change > 5:  # Cambio muy fuerte
                 score += 2
             
-            return min(score, config.scoring.rsi_max_points)  # Cap en 25
+            return min(score, 25)  # Cap en 25 puntos máximo
             
         except Exception as e:
             log.error(f"Error calculando score RSI: {e}")

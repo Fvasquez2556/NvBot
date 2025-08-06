@@ -12,7 +12,10 @@ from datetime import datetime, timedelta
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
 
-from config.trading_config import config
+from config.parameters import (
+    MIN_VOLUME_24H, MIN_PRICE, MAX_PRICE,
+    MAX_STREAMS_PER_CONNECTION, PING_INTERVAL, CONNECTION_TIMEOUT
+)
 from config.exchange_config import get_binance_config
 from utils.logger import log
 
@@ -70,8 +73,8 @@ class MassiveDataCollector:
                         volume_usdt = float(ticker['quoteVolume'])
                         price = float(ticker['lastPrice'])
                         
-                        if (volume_usdt >= config.filters.min_volume_24h and
-                            config.filters.min_price <= price <= config.filters.max_price):
+                        if (volume_usdt >= MIN_VOLUME_24H and
+                            MIN_PRICE <= price <= MAX_PRICE):
                             
                             filtered_pairs.append({
                                 'symbol': symbol,
@@ -103,7 +106,7 @@ class MassiveDataCollector:
             log.info("Configurando conexiones WebSocket...")
             
             # Dividir pares en lotes (máximo 190 streams por conexión)
-            batch_size = config.websocket.max_streams_per_connection
+            batch_size = MAX_STREAMS_PER_CONNECTION
             pair_batches = [
                 self.active_pairs[i:i + batch_size] 
                 for i in range(0, len(self.active_pairs), batch_size)
@@ -151,8 +154,8 @@ class MassiveDataCollector:
                 try:
                     async with websockets.connect(
                         ws_url,
-                        ping_interval=config.websocket.ping_interval,
-                        ping_timeout=config.websocket.connection_timeout
+                        ping_interval=PING_INTERVAL,
+                        ping_timeout=CONNECTION_TIMEOUT
                     ) as websocket:
                         
                         self.websocket_connections[connection_id] = websocket
@@ -346,7 +349,7 @@ class MassiveDataCollector:
                     elif change < 0:
                         losers.append((symbol, change))
                     
-                    if volume > config.filters.min_volume_24h * 5:  # 5x volumen mínimo
+                    if volume > MIN_VOLUME_24H * 5:  # 5x volumen mínimo
                         high_volume.append((symbol, volume))
             
             # Ordenar por cambio/volumen
