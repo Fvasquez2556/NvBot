@@ -1,0 +1,369 @@
+# Plan de Desarrollo Asistido por IA - Bot Trading Crypto
+
+## Filosofía del Desarrollo Asistido por IA
+
+La clave del éxito con herramientas de IA como GitHub Copilot Pro, ChatGPT o Claude radica en crear una estructura de proyecto clara y modular, donde cada archivo tenga una responsabilidad específica y bien definida. Las IA son extraordinariamente efectivas cuando pueden entender el contexto y propósito de cada componente, por lo que la organización del código será fundamental para maximizar su utilidad.
+
+## Fase 1: Arquitectura y Estructura Base (Semana 1)
+
+### Estructura de Directorios Optimizada para IA
+
+```
+crypto_trading_bot/
+├── config/                     # Configuraciones centralizadas
+│   ├── __init__.py
+│   ├── trading_config.py       # Parámetros de trading
+│   ├── exchange_config.py      # Configuración APIs
+│   └── indicators_config.py    # Configuración indicadores técnicos
+├── data/                       # Gestión de datos
+│   ├── __init__.py
+│   ├── data_fetcher.py         # Obtención datos en tiempo real
+│   ├── historical_data.py      # Datos históricos para backtesting
+│   ├── data_processor.py       # Limpieza y procesamiento
+│   └── data_storage.py         # Persistencia en base de datos
+├── indicators/                 # Indicadores técnicos modulares
+│   ├── __init__.py
+│   ├── rsi_optimizer.py        # RSI optimizado para crypto
+│   ├── macd_sensitive.py       # MACD 3-10-16 configuración
+│   ├── bollinger_crypto.py     # Bollinger Bands calibradas
+│   ├── volume_analyzer.py      # Análisis de volumen y spikes
+│   └── multi_timeframe.py      # Análisis multi-timeframe
+├── strategies/                 # Lógica de estrategias
+│   ├── __init__.py
+│   ├── momentum_strategy.py    # Estrategia principal momentum
+│   ├── scoring_system.py       # Sistema scoring 20 puntos
+│   ├── signal_validator.py     # Validación de señales
+│   └── pattern_detector.py     # Detección patrones breakout
+├── risk_management/            # Gestión de riesgo
+│   ├── __init__.py
+│   ├── position_sizer.py       # Kelly Criterion modificado
+│   ├── stop_loss_manager.py    # Gestión stop loss dinámico
+│   ├── portfolio_manager.py    # Gestión portfolio completo
+│   └── risk_metrics.py         # Cálculo métricas de riesgo
+├── execution/                  # Motor de ejecución
+│   ├── __init__.py
+│   ├── order_executor.py       # Ejecución órdenes Binance
+│   ├── websocket_manager.py    # Gestión conexiones WebSocket
+│   ├── latency_optimizer.py    # Optimización latencia
+│   └── error_handler.py        # Manejo errores y reconexiones
+├── backtesting/               # Sistema backtesting
+│   ├── __init__.py
+│   ├── backtest_engine.py      # Motor principal backtesting
+│   ├── walk_forward.py         # Walk-forward testing
+│   ├── performance_analyzer.py # Análisis performance
+│   └── report_generator.py     # Generación reportes
+├── monitoring/                 # Monitoreo y alertas
+│   ├── __init__.py
+│   ├── performance_monitor.py  # Monitoreo performance tiempo real
+│   ├── health_checker.py       # Monitoreo salud sistema
+│   ├── alert_system.py         # Sistema alertas
+│   └── dashboard.py            # Dashboard web tiempo real
+├── utils/                      # Utilidades compartidas
+│   ├── __init__.py
+│   ├── logger.py               # Sistema logging
+│   ├── validators.py           # Validaciones de datos
+│   ├── helpers.py              # Funciones auxiliares
+│   └── constants.py            # Constantes del sistema
+├── tests/                      # Tests automatizados
+│   ├── __init__.py
+│   ├── test_indicators/        # Tests indicadores
+│   ├── test_strategies/        # Tests estrategias
+│   ├── test_execution/         # Tests ejecución
+│   └── test_backtesting/       # Tests backtesting
+├── notebooks/                  # Jupyter notebooks experimentación
+│   ├── data_exploration.ipynb  # Exploración datos
+│   ├── strategy_development.ipynb # Desarrollo estrategias
+│   └── performance_analysis.ipynb # Análisis performance
+├── requirements.txt            # Dependencias Python
+├── docker-compose.yml          # Configuración Docker
+├── README.md                   # Documentación principal
+└── main.py                     # Punto entrada aplicación
+```
+
+### Stack Tecnológico Optimizado para IA
+
+**Librerías Core (requirements.txt)**
+```
+# Trading y APIs
+ccxt==4.2.25                    # Exchange APIs unificadas
+python-binance==1.0.19         # API específica Binance
+websocket-client==1.7.0        # WebSocket connections
+
+# Análisis Técnico y Datos
+pandas==2.2.0                  # Manipulación datos
+numpy==1.26.3                  # Operaciones numéricas
+ta-lib==0.4.28                 # Indicadores técnicos
+yfinance==0.2.18               # Datos históricos adicionales
+
+# Machine Learning (futuras expansiones)
+scikit-learn==1.4.0           # ML básico
+tensorflow==2.15.0            # Deep learning opcional
+
+# Base de Datos y Cache
+redis==5.0.1                  # Cache en memoria
+clickhouse-driver==0.2.6      # Base datos time-series
+
+# Backtesting y Análisis
+backtesting==0.3.3            # Framework backtesting
+plotly==5.18.0                # Visualizaciones interactivas
+dash==2.16.1                  # Dashboard web
+
+# Monitoreo y Logging
+loguru==0.7.2                 # Logging avanzado
+prometheus-client==0.19.0     # Métricas sistema
+
+# Utilidades
+python-dotenv==1.0.0          # Variables entorno
+pydantic==2.5.3               # Validación datos
+asyncio-mqtt==0.16.1          # Comunicación asíncrona
+```
+
+## Fase 2: Implementación de Componentes Core (Semanas 2-3)
+
+### Archivos Prioritarios para Desarrollo con IA
+
+**Orden de implementación estratégico basado en dependencias:**
+
+### 2.1 Configuración Base (config/)
+
+**config/trading_config.py** - Primer archivo a crear
+```python
+"""
+Configuración central de parámetros de trading optimizados para crypto.
+Basado en investigación validada del documento.
+"""
+# Las IA pueden generar todo el contenido basándose en los parámetros
+# específicos del documento (RSI 25/75, MACD 3-10-16, etc.)
+```
+
+**Prompt sugerido para IA:**
+"Crea un archivo de configuración Python que implemente todos los parámetros optimizados para trading crypto mencionados en el documento: RSI umbrales 25/75, MACD 3-10-16, Bollinger Bands SMA-20 desviación 2.0, filtros de volumen 200-300%, sistema scoring 20 puntos, etc. Usa dataclasses o pydantic para validación."
+
+### 2.2 Indicadores Técnicos (indicators/)
+
+**indicators/rsi_optimizer.py** - Componente fundamental
+```python
+"""
+Implementación RSI optimizada para criptomonedas con umbrales 25/75.
+Incluye detección de divergencias y análisis multi-timeframe.
+"""
+```
+
+**Prompt sugerido para IA:**
+"Implementa una clase RSIOptimizer que calcule RSI con período 14 y umbrales 25/75 específicos para crypto. Incluye métodos para detectar divergencias, sobreventa/sobrecompra, y análisis en múltiples timeframes. Usa ta-lib como base y pandas para procesamiento."
+
+**indicators/volume_analyzer.py** - Crítico para momentum
+```python
+"""
+Análisis de volumen y detección de spikes para identificar momentum real.
+Implementa filtros de volumen 200-300% sobre promedio.
+"""
+```
+
+### 2.3 Sistema de Scoring (strategies/)
+
+**strategies/scoring_system.py** - Cerebro del bot
+```python
+"""
+Sistema de scoring cuantitativo de 20 puntos que evalúa:
+- Technical Score (10 puntos)
+- Sentiment Score (5 puntos)  
+- Risk Score (5 puntos)
+Solo oportunidades 15+ puntos califican para trading.
+"""
+```
+
+**Prompt sugerido para IA:**
+"Crea una clase ScoringSystem que implemente el sistema de 20 puntos del documento. Technical Score evalúa breakouts, volumen, RSI, MAs y timeframes. Sentiment Score usa APIs de Fear&Greed, funding rates. Risk Score evalúa liquidez y risk/reward. Retorna score total y desglose detallado."
+
+## Fase 3: Motor de Datos y Conexiones (Semana 3)
+
+### 3.1 Gestión de Datos en Tiempo Real
+
+**data/data_fetcher.py** - Conexión con mercados
+```python
+"""
+Obtención datos tiempo real vía WebSocket Binance.
+Maneja reconexiones, rate limits y múltiples pares simultáneos.
+"""
+```
+
+**data/websocket_manager.py** - Conexiones estables
+```python
+"""
+Gestión robusta conexiones WebSocket con:
+- Reconexión automática cada 24h
+- Rate limits 4,800/min respetados
+- Manejo 200 streams simultáneos
+"""
+```
+
+### 3.2 Procesamiento de Datos
+
+**data/data_processor.py** - Limpieza y preparación
+```python
+"""
+Procesamiento y limpieza datos de mercado.
+Normalización, detección outliers, sincronización timeframes.
+"""
+```
+
+**Prompt sugerido para IA:**
+"Implementa DataProcessor que reciba datos brutos de WebSocket Binance, los limpie (outliers, gaps), sincronice múltiples timeframes (15m, 1h, 4h), calcule estadísticas rolling, y prepare estructura de datos optimizada para análisis técnico. Usa pandas y numpy."
+
+## Fase 4: Motor de Backtesting Robusto (Semana 4)
+
+### 4.1 Engine de Backtesting
+
+**backtesting/backtest_engine.py** - Validación estrategias
+```python
+"""
+Motor backtesting que implementa walk-forward testing:
+- Ventanas 90 días entrenamiento, 30 días testing
+- Reoptimización cada 7 días
+- Métricas crypto-específicas
+"""
+```
+
+**backtesting/performance_analyzer.py** - Métricas detalladas
+```python
+"""
+Análisis performance con métricas específicas crypto:
+- Sharpe ratio >1.5 mínimo
+- Maximum drawdown <25%
+- Win rate >45%, Profit factor >1.3
+"""
+```
+
+### 4.2 Generación de Reportes
+
+**backtesting/report_generator.py** - Visualización resultados
+```python
+"""
+Generación reportes visuales con plotly:
+- Equity curve, distribución retornos
+- Análisis drawdowns, métricas rolling
+- Comparación vs benchmarks
+"""
+```
+
+## Fase 5: Ejecución y Producción (Semanas 5-6)
+
+### 5.1 Motor de Ejecución
+
+**execution/order_executor.py** - Ejecución órdenes
+```python
+"""
+Ejecución órdenes Binance con:
+- Validación pre-ejecución
+- Manejo errores y rechazos
+- Optimización latencia <100ms
+"""
+```
+
+**execution/latency_optimizer.py** - Optimización velocidad
+```python
+"""
+Optimización latencia ejecución:
+- Connection pooling
+- Request batching
+- Cache estratégico
+"""
+```
+
+### 5.2 Gestión de Riesgo Tiempo Real
+
+**risk_management/position_sizer.py** - Kelly Criterion
+```python
+"""
+Cálculo tamaño posición usando Kelly Criterion modificado:
+- Ajuste volatilidad crypto (factor 0.25)
+- Límites máximos 2% por trade
+- Correlación portfolio <0.7
+"""
+```
+
+**risk_management/stop_loss_manager.py** - Protección capital
+```python
+"""
+Gestión stop loss dinámico:
+- Stop inicial 2-3% basado ATR
+- Break-even en +5%
+- Trailing stop post +7.5%
+"""
+```
+
+## Estrategias de Prompting para Maximizar Efectividad de IA
+
+### Prompts Estructurados por Tipo de Archivo
+
+**Para Archivos de Configuración:**
+"Crea un archivo de configuración Python usando dataclasses que implemente [parámetros específicos del documento]. Incluye validación de tipos, valores por defecto sensatos, y documentación clara de cada parámetro."
+
+**Para Indicadores Técnicos:**
+"Implementa una clase [NombreIndicador] que herede de una clase base TechnicalIndicator. Debe calcular [indicador específico] con parámetros optimizados para crypto [parámetros del documento]. Incluye métodos para análisis multi-timeframe y detección de señales."
+
+**Para Sistemas de Trading:**
+"Desarrolla una clase [NombreSistema] que implemente [lógica específica del documento]. Debe ser modular, testeable, y seguir principios SOLID. Incluye logging detallado y manejo de errores."
+
+**Para Backtesting:**
+"Crea un sistema de backtesting que implemente walk-forward testing con ventanas [parámetros del documento]. Debe calcular métricas específicas crypto y generar reportes visuales detallados."
+
+### Técnicas de Prompting Avanzadas
+
+**Prompting Incremental:**
+Comienza con funcionalidad básica y ve agregando complejidad en iteraciones sucesivas. Por ejemplo, primero pide un RSI básico, luego optimización crypto, luego multi-timeframe, luego detección divergencias.
+
+**Prompting con Contexto:**
+Siempre proporciona contexto del documento específico: "Basándote en la investigación que muestra RSI 25/75 superior a 30/70 para crypto..."
+
+**Prompting con Ejemplos:**
+Incluye ejemplos de entrada y salida esperada: "La función debe recibir DataFrame con columns ['open', 'high', 'low', 'close', 'volume'] y retornar dict con scoring detallado."
+
+## Flujo de Trabajo Optimizado
+
+### Desarrollo Iterativo Asistido por IA
+
+**Día 1-2:** Estructura proyecto y configuraciones base
+**Día 3-5:** Indicadores técnicos modulares
+**Día 6-8:** Sistema scoring y validación señales
+**Día 9-12:** Motor backtesting y análisis performance
+**Día 13-15:** Conexiones tiempo real y gestión datos
+**Día 16-20:** Motor ejecución y gestión riesgo
+**Día 21-25:** Integración, testing y optimización
+**Día 26-30:** Monitoreo, alertas y deployment
+
+### Validación Continua
+
+Después de cada componente implementado por IA:
+1. **Review código** - Verificar lógica y optimizaciones
+2. **Testing unitario** - Crear tests para cada módulo
+3. **Integración** - Verificar interacción entre componentes
+4. **Documentación** - Documentar decisiones y parámetros
+
+## Herramientas de IA Recomendadas por Fase
+
+**GitHub Copilot Pro:** Ideal para autocompletado y generación código boilerplate
+**ChatGPT/Claude:** Excelente para explicar lógica compleja y optimizar algoritmos
+**Cursor AI:** Perfecto para refactoring y mejoras de código existente
+**Tabnine:** Útil para sugerencias contextuales específicas del proyecto
+
+## Consideraciones Especiales para Desarrollo con IA
+
+### Manejo de Dependencias
+
+Las IA son muy efectivas cuando conocen las librerías exactas que usarás. Instala todas las dependencias desde el inicio y siempre especifica en tus prompts qué librerías usar.
+
+### Modularidad como Clave
+
+Cada archivo debe tener una responsabilidad clara y bien definida. Esto permite que las IA generen código más preciso y mantenible.
+
+### Testing Desde el Inicio
+
+Pide a las IA que generen tests unitarios junto con cada módulo. Esto acelera significativamente la identificación de problemas.
+
+### Documentación Automática
+
+Las IA pueden generar excelente documentación. Pide siempre docstrings detalladas y comentarios explicativos en código complejo.
+
+Este plan te permitirá desarrollar un bot de trading profesional en 4-6 semanas utilizando IA como acelerador, manteniendo alta calidad de código y comprensión profunda del sistema. ¿Te gustaría que profundicemos en alguna fase específica o necesitas ayuda con los primeros prompts para comenzar?
